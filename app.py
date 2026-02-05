@@ -10,7 +10,7 @@ from st_copy_button import st_copy_button
 # --- 1. SETUP & THEME ---
 st.set_page_config(page_title="Solar Interconnection Assistant", layout="wide")
 
-# Custom CSS for High Contrast Inputs & White Labels
+# Custom CSS: High Contrast Inputs + FIX FOR MENU TEXT + White Labels
 st.markdown("""
     <style>
     /* 1. Force input fields to be white with black text */
@@ -32,7 +32,7 @@ st.markdown("""
         color: #ffffff !important;
     }
 
-    /* 3. Style disabled inputs (results) to look distinct */
+    /* 3. Style disabled inputs (results) */
     div[data-testid="stTextInput"] input:disabled {
         background-color: #e9ecef !important;
         color: #2c3e50 !important;
@@ -40,9 +40,23 @@ st.markdown("""
         opacity: 1 !important;
     }
 
-    /* 4. General UI tweaks */
-    div[data-baseweb="popover"] ul { background-color: #d3d3d3 !important; }
-    div[data-baseweb="popover"] li { color: black !important; }
+    /* 4. FIX FOR THE UNREADABLE MENU (Three Dots) */
+    /* This forces the text inside the popover menu to be white */
+    div[data-testid="stPopoverBody"] {
+        color: white !important;
+    }
+    li[role="option"] div {
+        color: white !important;
+    }
+    /* Also fixes the 'Manage App' text */
+    div[data-testid="stToolbar"] {
+        color: white !important;
+    }
+
+    /* 5. General UI tweaks */
+    div[data-baseweb="popover"] ul { background-color: #333333 !important; } /* Dark background for menu */
+    div[data-baseweb="popover"] li { color: white !important; } /* White text for menu items */
+    
     .stButton>button { 
         width: 100%; border-radius: 8px; height: 3.5em; 
         background-color: #2e7bcf; color: white; font-weight: bold; 
@@ -50,12 +64,14 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# YOUR API KEY
-# Try to get the key from Streamlit Secrets (Cloud), otherwise use local/environment
-if "GOOGLE_API_KEY" in st.secrets:
-    genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
-else:
-    # Fallback for local testing if you haven't set up secrets.toml locally
+# --- 2. API KEY SETUP (CLOUD READY) ---
+try:
+    if "GOOGLE_API_KEY" in st.secrets:
+        genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
+    else:
+        # Fallback for local testing
+        genai.configure(api_key="AIzaSyDEg7dghFxbdmQigr4JqQuB5zo2UOVDsWw")
+except FileNotFoundError:
     genai.configure(api_key="AIzaSyDEg7dghFxbdmQigr4JqQuB5zo2UOVDsWw")
 
 # --- SESSION STATE ---
@@ -101,8 +117,23 @@ def process_file_for_ai(uploaded_file):
         return {"mime_type": uploaded_file.type, "data": uploaded_file.getvalue()}
     return None
 
-# --- 2. APP UI ---
-st.title("☀️ Solar Interconnection Assistant")
+# --- 3. APP UI ---
+
+# HEADER SECTION (Title + Logo)
+# We use columns to put the logo on the right
+col_header_1, col_header_2 = st.columns([4, 1], vertical_alignment="center")
+
+with col_header_1:
+    st.title("☀️ Solar Interconnection Assistant")
+
+with col_header_2:
+    # This looks for 'logo.png' in your GitHub folder
+    if os.path.exists("logo.png"):
+        st.image("logo.png", use_container_width=True)
+    else:
+        # Fallback if you haven't uploaded it yet
+        st.write("") 
+
 tab1, tab2 = st.tabs(["🚀 Application", "👤 Coordinator Settings"])
 
 # --- TAB 2: SETTINGS ---
@@ -153,7 +184,6 @@ with tab1:
                     st.error("❌ API Connection Failed. Please check your API key.")
                 else:
                     with st.spinner("AI analyzing documents..."):
-                        # Clear old buffers
                         st.session_state['file_buffers'] = {}
                         
                         ai_contract = process_file_for_ai(contract)
@@ -205,12 +235,10 @@ with tab1:
                             
                             # 4. ROBUST PDF PROCESSING
                             try:
-                                # IMPORTANT: Reset the file pointer to the beginning!
                                 plan_set.seek(0)
                                 reader = PdfReader(plan_set)
                                 num_pages = len(reader.pages)
                                 
-                                # Page 3 (Index 2)
                                 if num_pages >= 3:
                                     sp_w = PdfWriter(); sp_w.add_page(reader.pages[2])
                                     sp_io = io.BytesIO(); sp_w.write(sp_io)
@@ -218,7 +246,6 @@ with tab1:
                                 else:
                                     st.session_state['file_buffers']['site_plan_error'] = f"PDF is too short ({num_pages} pages)"
                                 
-                                # Page 8 (Index 7)
                                 if num_pages >= 8:
                                     ol_w = PdfWriter(); ol_w.add_page(reader.pages[7])
                                     ol_io = io.BytesIO(); ol_w.write(ol_io)
@@ -256,7 +283,6 @@ with tab1:
             for i, (f, v) in enumerate(data.items()):
                 c1, c2 = st.columns([3, 1])
                 with c1: 
-                    # Inputs are now styled white via CSS
                     st.text_input(f, value=str(v), disabled=True, key=f"input_{i}")
                 with c2: 
                     st_copy_button(text=str(v), before_copy_label="Copy", after_copy_label="Copied!", key=f"copy_{i}")
@@ -265,7 +291,6 @@ with tab1:
             st.subheader("📥 Downloads")
             
             buffers = st.session_state['file_buffers']
-            
             c_d1, c_d2, c_d3 = st.columns(3)
             
             with c_d1:
@@ -288,5 +313,7 @@ with tab1:
                 if 'meter_pdf' in buffers:
                     st.download_button("Download Meter Photo", buffers['meter_pdf'], "MeterPhoto.pdf")
                 else:
+                    st.info("No Meter Photo uploaded")
 
                     st.info("No Meter Photo uploaded")
+
