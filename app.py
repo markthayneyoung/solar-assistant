@@ -10,7 +10,7 @@ from st_copy_button import st_copy_button
 # --- 1. SETUP & THEME ---
 st.set_page_config(page_title="Solar Interconnection Assistant", layout="wide")
 
-# Custom CSS: High Contrast Inputs + FIX FOR MENU TEXT + White Labels
+# Custom CSS: High Contrast Inputs + MENU FIX + LOGO GLOW
 st.markdown("""
     <style>
     /* 1. Force input fields to be white with black text */
@@ -41,21 +41,21 @@ st.markdown("""
     }
 
     /* 4. FIX FOR THE UNREADABLE MENU (Three Dots) */
-    /* This forces the text inside the popover menu to be white */
-    div[data-testid="stPopoverBody"] {
-        color: white !important;
-    }
-    li[role="option"] div {
-        color: white !important;
-    }
-    /* Also fixes the 'Manage App' text */
-    div[data-testid="stToolbar"] {
-        color: white !important;
+    div[data-testid="stPopoverBody"] { color: white !important; }
+    li[role="option"] div { color: white !important; }
+    div[data-testid="stToolbar"] { color: white !important; }
+
+    /* 5. IMAGE STYLING (Logo & Previews) - THE FADED BORDER FIX */
+    /* This targets the logo and adds a soft white glow + rounded corners */
+    div[data-testid="stImage"] img {
+        border-radius: 12px; /* Smooth corners */
+        box-shadow: 0 0 15px rgba(255, 255, 255, 0.15); /* The "Faded Border" glow */
+        border: 1px solid rgba(255, 255, 255, 0.1); /* Thin defining line */
     }
 
-    /* 5. General UI tweaks */
-    div[data-baseweb="popover"] ul { background-color: #333333 !important; } /* Dark background for menu */
-    div[data-baseweb="popover"] li { color: white !important; } /* White text for menu items */
+    /* 6. General UI tweaks */
+    div[data-baseweb="popover"] ul { background-color: #333333 !important; }
+    div[data-baseweb="popover"] li { color: white !important; }
     
     .stButton>button { 
         width: 100%; border-radius: 8px; height: 3.5em; 
@@ -120,18 +120,15 @@ def process_file_for_ai(uploaded_file):
 # --- 3. APP UI ---
 
 # HEADER SECTION (Title + Logo)
-# We use columns to put the logo on the right
 col_header_1, col_header_2 = st.columns([4, 1], vertical_alignment="center")
 
 with col_header_1:
     st.title("☀️ Solar Interconnection Assistant")
 
 with col_header_2:
-    # This looks for 'logo.png' in your GitHub folder
     if os.path.exists("logo.png"):
         st.image("logo.png", use_container_width=True)
     else:
-        # Fallback if you haven't uploaded it yet
         st.write("") 
 
 tab1, tab2 = st.tabs(["🚀 Application", "👤 Coordinator Settings"])
@@ -315,5 +312,4 @@ with tab1:
                 else:
                     st.info("No Meter Photo uploaded")
 
-                    st.info("No Meter Photo uploaded")
 
