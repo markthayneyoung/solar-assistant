@@ -51,7 +51,12 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # YOUR API KEY
-genai.configure(api_key="AIzaSyDEg7dghFxbdmQigr4JqQuB5zo2UOVDsWw")
+# Try to get the key from Streamlit Secrets (Cloud), otherwise use local/environment
+if "GOOGLE_API_KEY" in st.secrets:
+    genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
+else:
+    # Fallback for local testing if you haven't set up secrets.toml locally
+    genai.configure(api_key="AIzaSyDEg7dghFxbdmQigr4JqQuB5zo2UOVDsWw")
 
 # --- SESSION STATE ---
 if 'extraction_results' not in st.session_state:
@@ -283,4 +288,5 @@ with tab1:
                 if 'meter_pdf' in buffers:
                     st.download_button("Download Meter Photo", buffers['meter_pdf'], "MeterPhoto.pdf")
                 else:
+
                     st.info("No Meter Photo uploaded")
